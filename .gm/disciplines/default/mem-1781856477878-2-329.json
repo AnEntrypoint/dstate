@@ -1,0 +1,1 @@
+adaptogen test.js witness contract: single file at repo root, 200-line hard ceiling, real services (real libsql, real on-disk store, real crash recovery), no mocks, no test/ dir, no *.test.js suite. Plain ok(cond,msg) assertions, process.exit(1) on first failure. Every new behavior earns an assertion in test.js, not a new file.

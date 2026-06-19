@@ -1,0 +1,1 @@
+adaptogen db.js facade detail: the synchronous libsql client (libsql package) is wrapped in db.js which re-exposes the bun:sqlite-shaped db.query(sql).get/all + db.run(sql,...args) surface, strips libsql's injected _metadata row key, and normalizes bind values. Import via openDatabase / the facade; never import a SQLite driver elsewhere.

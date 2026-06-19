@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+
+# build / runtime artifacts
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.db.lock
+/tmp/
+*.log
+
+# editor
+.DS_Store
+.vscode/
+
+# >>> gm-managed (transient spool/witness; do not hand-edit) >>>
+.gm/pw-sock-*/
+.gm/exec-spool/
+.gm/witness/
+.gm/instructions/
+.gm/last-prompt.txt
+.gm/last-dispatch-ts
+.gm/last-instruction-ts
+.gm/long-gap-retry-state
+.gm/turn-state.json
+.gm/next-step.md
+.gm/prd.yml
+.gm/mutables.yml
+.gm/*.db
+.gm/.turn-browser-edits.json
+.gm/.turn-browser-witnessed
+.gm/disciplines/codeinsight/
+.gm/disciplines/codeinsight-manifest/
+# <<< gm-managed <<<

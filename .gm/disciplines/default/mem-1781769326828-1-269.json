@@ -1,0 +1,3 @@
+## Resolved mutable: m-libsql-sync-bun-win32
+
+installed libsql@0.5.29; `bun run probe-libsql.mjs` AND `node probe-libsql.mjs` on win32 both printed {open:ok, pragmas:ok, onDisk:42, hasTransaction:true}. Sync native addon has a working win32 prebuild under Bun and node.

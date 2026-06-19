@@ -1,0 +1,3 @@
+## Resolved mutable: m-libsql-fts5
+
+probe: CREATE VIRTUAL TABLE __fts USING fts5(x) succeeded -> out.fts5=true under both bun and node.

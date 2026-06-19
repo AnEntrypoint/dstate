@@ -1,0 +1,61 @@
+name: publish
+
+# On every push to main: prove the build, bump the patch version, publish to npm,
+# and push the version commit back. The version commit carries [skip ci] so the
+# push it generates does not re-trigger this workflow (the recursion guard).
+on:
+  push:
+    branches: [main]
+    # Tooling/bookkeeping-only commits should not burn a version + publish.
+    paths-ignore:
+      - '.gm/**'
+      - '**/*.md'
+
+concurrency:
+  group: publish-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Skip the run the version-bump commit itself pushes back.
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install
+
+      - name: Integration witness (the single test file)
+        run: bun test.js
+
+      # node + npm for version bump and publish; registry-url wires the .npmrc that
+      # reads NODE_AUTH_TOKEN at publish time.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Configure git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump patch version
+        run: |
+          npm version patch -m "chore(release): %s [skip ci]"
+
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Push version commit and tag
+        run: git push origin HEAD:main --follow-tags

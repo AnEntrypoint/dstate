@@ -1,0 +1,3 @@
+## Resolved mutable: m-floosie
+
+fetch https://registry.npmjs.org/floosie -> {dist-tags.latest:'0.7.6', description:'Universal stream processing platform - pipe anything to anything', dependencies@0.7.6:{@agentclientprotocol/sdk,file-type,mri,sflow,ws}, dependencies@0.6.x included xstate ^5.30.0; build script 'tsc', type:module}. Conclusion: floosie is a niche single-maintainer (lanmower) ESM stream/ACP transport platform, tsc-built not buildless, no state-store/FSM API surface.

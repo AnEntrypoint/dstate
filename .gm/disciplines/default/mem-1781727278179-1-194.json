@@ -1,0 +1,3 @@
+## Resolved mutable: m-fts5
+
+exec `CREATE VIRTUAL TABLE t USING fts5(x)` under bun:sqlite 3.51.2 returned fts5:yes. FTS5 is the primary recall path; LIKE fallback retained for builds lacking it.

@@ -1,0 +1,3 @@
+## Resolved mutable: m-libsql-bigint
+
+probe: INTEGER PRIMARY KEY column read back as typeof row.seq === 'number' (out.seqType='number'), not bigint.

@@ -1,0 +1,3 @@
+## Resolved mutable: m-libsql-api-shape
+
+probe: db.exec(ddl) for DDL/pragmas; db.prepare(sql).get(...args)/.all(...args)/.run(...args) for queries; db.transaction(fn) present. This is better-sqlite3-shaped, differing from bun:sqlite's db.query(sql).all(...). Rows also carry an injected _metadata:{duration} key.

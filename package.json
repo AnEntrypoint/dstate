@@ -1,0 +1,56 @@
+{
+  "name": "adaptogen",
+  "version": "0.1.5",
+  "description": "Agent-owned, self-evolving DAG+FSM state: durable memory, policy and intuition in one event-sourced store, with soft/hard transition enforcement.",
+  "type": "module",
+  "module": "src/index.js",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "adaptogen": "src/cli.js"
+  },
+  "files": [
+    "src",
+    ".claude/skills",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnEntrypoint/adaptogen.git"
+  },
+  "homepage": "https://github.com/AnEntrypoint/adaptogen#readme",
+  "bugs": {
+    "url": "https://github.com/AnEntrypoint/adaptogen/issues"
+  },
+  "scripts": {
+    "test": "bun test.js",
+    "bench": "bun run bench/bench.js",
+    "cli": "bun run src/cli.js"
+  },
+  "engines": {
+    "node": ">=18",
+    "bun": ">=1.1.0"
+  },
+  "keywords": [
+    "agent",
+    "state-machine",
+    "fsm",
+    "dag",
+    "event-sourcing",
+    "memory",
+    "policy",
+    "bandit",
+    "sqlite"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "libsql": "^0.5.29"
+  }
+}
