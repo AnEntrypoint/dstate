@@ -13,7 +13,7 @@
   },
   "files": [
     "src",
-    ".claude/skills",
+    "skills",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

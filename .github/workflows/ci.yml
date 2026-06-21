@@ -1,0 +1,32 @@
+name: ci
+
+# Prove every pull request and every non-main branch push against the same
+# witnesses the release path trusts: the single integration test file and the
+# performance bench. publish.yml owns main (version + npm); this workflow never
+# publishes, so the two cannot collide.
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  witness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install
+
+      - name: Integration witness (the single test file)
+        run: bun test.js
+
+      - name: Performance bench (fails on an O(n) per-step regression)
+        run: bun run bench
