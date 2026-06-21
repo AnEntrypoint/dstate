@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- fix(test): the integration witness now creates `./tmp` before opening the store.
+  `./tmp` is gitignored, so on a fresh clone (and in the publish CI) it is absent
+  and `libsql` failed to open `./tmp/integration.db` with `SQLITE_CANTOPEN`. The
+  witness is self-contained again: `bun test.js` passes from a clean checkout.
 - feat(npx): the CLI now runs under plain Node -- the `bin` shebang switched from
   `bun` to `node` (the runtime path has no `bun:` imports; `libsql` is node-native),
   so `npx -y adaptogen <command>` works with zero install and no Bun. `engines` now

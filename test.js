@@ -6,7 +6,7 @@
 // holds. Real services, no mocks. Run: `bun test.js`. Hard ceiling: 200 lines.
 
 import { DState, importState, compileGuard, evalGuard, DEFAULT_TUNABLES, MANIFEST } from "./src/index.js";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, rmSync, mkdirSync } from "node:fs";
 
 let n = 0;
 function ok(cond, msg) {
@@ -18,6 +18,9 @@ function ok(cond, msg) {
 }
 
 const FILE = "./tmp/integration.db";
+// ./tmp is gitignored, so it is absent on a fresh clone and in CI; create it
+// before any store opens or libsql fails with SQLITE_CANTOPEN on the missing dir.
+mkdirSync("./tmp", { recursive: true });
 function cleanup() {
   for (const s of ["", "-wal", "-shm", ".lock"]) {
     try {
