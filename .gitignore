@@ -32,4 +32,5 @@ node_modules/
 .gm/.turn-browser-witnessed
 .gm/disciplines/codeinsight/
 .gm/disciplines/codeinsight-manifest/
+.gm/disciplines/codeinsight-vec/
 # <<< gm-managed <<<
