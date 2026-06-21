@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- ci(workflow): add `.github/workflows/ci.yml` running the integration witness
+  (`bun test.js`) and the performance bench (`bun run bench`) on every pull
+  request and every push to a non-main branch. Previously only `publish.yml`
+  existed and it runs solely on push to `main`, so pull requests and feature
+  branches got no CI at all. The new workflow never publishes, so it cannot
+  collide with the release path; concurrency cancels superseded runs per ref.
+- fix(pkg): `package.json` `files` listed `.claude/skills`, but the Agent Skill
+  actually lives at `skills/adaptogen/SKILL.md`, so `npm pack` shipped the
+  package WITHOUT the skill. `files` now lists `skills`; `npm pack --dry-run`
+  confirms `skills/adaptogen/SKILL.md` is in the tarball.
 - fix(test): the integration witness now creates `./tmp` before opening the store.
   `./tmp` is gitignored, so on a fresh clone (and in the publish CI) it is absent
   and `libsql` failed to open `./tmp/integration.db` with `SQLITE_CANTOPEN`. The
@@ -10,7 +20,7 @@
   `bun` to `node` (the runtime path has no `bun:` imports; `libsql` is node-native),
   so `npx -y adaptogen <command>` works with zero install and no Bun. `engines` now
   declares `node >=18` alongside `bun`.
-- feat(skill): ship a Claude Code Agent Skill at `.claude/skills/adaptogen/SKILL.md`
+- feat(skill): ship a Claude Code Agent Skill at `skills/adaptogen/SKILL.md`
   (included in the npm package) that enforces routing every task juncture --
   orient, plan, transition/step, reward, checkpoint, recall, validate, export --
   through `npx adaptogen`, so durable state never lives only in agent prose. README
