@@ -3,17 +3,24 @@
 adaptogen is an agent-owned, self-evolving DAG+FSM state store. These are the
 load-bearing invariants. Any agent (or human) changing this code keeps them.
 
-Runtime: buildless JavaScript (ES modules, no types, no compile step) on Bun.
-Persistence: synchronous libsql client behind `db.js` facade -- use `openDatabase`; never import a SQLite driver directly (facade detail in rs-learn).
+Runtime: buildless JavaScript (ES modules, no types, no compile step); runs on
+plain Node or Bun with NO native/runtime dependency.
+Persistence: in-memory event log + projection, persisted to a portable JSON
+bundle on disk (`export()`/`save()` write it, `DState.open` loads+replays it).
+There is no database, no embeddings, no learned ranking. On-disk durability is
+snapshot-on-save (atomic temp+rename), not per-append.
 
 ## Architecture (do not route around)
 
-- The event log (`events` table) is the single source of truth. `Store.append`
-  is the ONLY mutation path. Every projection table (`nodes`, `edges`, `zones`,
-  `zone_members`, `stats`, `cursor`) is a pure, deterministic fold of the log:
-  `rebuild()` must always reproduce the live projection exactly. If you add state,
-  add an event type and an `applyEvent` case -- never write a projection table
-  directly from a feature.
+- The event log (the `Store.events` array) is the single source of truth.
+  `Store.append` is the ONLY mutation path. Every projection structure (`nodes`,
+  `edges`, `zones`, `zoneMembers`, `cursorSet`, `metaMap`) is a pure,
+  deterministic fold of the log: `rebuild()` must always reproduce the live
+  projection exactly. If you add state, add an event type and an `applyEvent`
+  case -- never write a projection structure directly from a feature. Snapshots
+  and checkpoints are durable side tables (NOT projection): `clearProjection()`
+  must not clear them, so a rollback past a CheckpointCreated event still leaves
+  the checkpoint reachable.
 - Never hard-delete history. Nodes are archived/deprecated, edges are removed via
   `EdgeRemoved` events, and the log is only trimmed by recovery (torn tail) or an
   explicit rollback/compaction. Audit survives.
@@ -29,8 +36,9 @@ Persistence: synchronous libsql client behind `db.js` facade -- use `openDatabas
   agent-authored strings. The DSL is loop-free, depth- and length-bounded, and
   reads context via own-property lookups that reject `__proto__`/`constructor`/
   `prototype`. Keep it that way.
-- All SQL is parameterized. No string interpolation of agent input into SQL or
-  FTS queries. Ids are charset-validated; payloads are size-capped.
+- No agent input is ever interpolated into executable code or a query language;
+  recall is a plain in-memory field/substring filter. Ids are charset-validated;
+  payloads are size-capped.
 
 ## Output
 

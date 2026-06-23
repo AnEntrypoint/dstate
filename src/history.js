@@ -1,6 +1,6 @@
 // History query over the event log. The log is the audit trail: transitions,
-// blocks, soft violations, rewards, evolutions. reward() credit-assignment and
-// the CLI both read through here. ASCII-only, human/agent readable.
+// blocks, soft violations, config changes, evolutions. orient() and the CLI both
+// read through here. ASCII-only, human/agent readable.
 
 export function history(ds, filter = {}) {
   const limit = filter.limit ?? 100;
@@ -30,8 +30,8 @@ function summarize(type, p) {
       return `blocked ${p.from ?? "-"} -> ${p.to}: ${p.reason}`;
     case "SoftViolation":
       return `soft violation on ${p.edgeId}: ${p.reason}`;
-    case "RewardApplied":
-      return `reward ${p.value} over ${p.scopes.length} scopes`;
+    case "ConfigSet":
+      return `config ${p.key} = ${JSON.stringify(p.value)}`;
     case "NodeUpserted":
       return `node ${p.id} (${p.kind})`;
     case "EdgeUpserted":

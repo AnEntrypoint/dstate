@@ -17,11 +17,13 @@ export function checkpoint(ds, name) {
 }
 
 export function listCheckpoints(ds) {
-  return ds.store.db.query("SELECT name, seq FROM checkpoints ORDER BY seq").all().map((r) => ({ name: r.name, seq: r.seq }));
+  return [...ds.store.checkpoints.entries()]
+    .map(([name, c]) => ({ name, seq: c.seq }))
+    .sort((a, b) => a.seq - b.seq);
 }
 
 export function rollback(ds, name) {
-  const cp = ds.store.db.query("SELECT seq FROM checkpoints WHERE name = ?").get(name);
+  const cp = ds.store.checkpoints.get(name);
   if (!cp) return fail("CheckpointNotFound", `checkpoint ${name} not found`);
   ds.store.truncateAfter(cp.seq);
   ds.store.rebuild();
@@ -59,7 +61,7 @@ export function merge(mainDs, branchDs) {
 
 /** Drop a branch store and its backing file. */
 export function discard(branchDs) {
-  const file = branchDs.store.db.filename;
+  const file = branchDs.filename;
   branchDs.close();
   if (file && file !== ":memory:" && existsSync(file)) {
     try {

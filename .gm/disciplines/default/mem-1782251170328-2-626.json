@@ -1,0 +1,3 @@
+## Resolved mutable: m-enforce-decide-shape
+
+enforce.js read fully. decide() at line 14: candidates from guard(20-25)/boundary(28-38)/intra(41-47), strictest winner(50-51). Escalation isolated at lines 53-56 (promoted = warn && escalationThreshold>0 && softViolations+1>=threshold) and field at line 73 (escalation:{softViolations,promoted}). Excise = delete 53-56 + line 73 field + inputs softViolations/escalationThreshold; core allow/warn/deny (winner.decision/effectiveEnforcement/reasons) untouched. Only caller of trace.escalation.promoted is engine.transition escalation branch (removed by escalation-demotion-rescope).

@@ -1,0 +1,3 @@
+## Resolved mutable: m-appendmany-atomicity
+
+store.js:101-109 appendMany leans on db.transaction(). In-memory replacement: before the batch save {headSeq, headHashValue, events.length}; on any throw, truncate events to saved length, restore head fields, rebuild() (pure fold) the projection. test.js:163 already asserts the all-or-nothing pattern (pb.store.lastSeq()===seq0 after a rejected plan); new test keeps a mid-batch-throw assertion. Concrete: rebuild() at store.js:350 is a deterministic fold, so restore is exact.

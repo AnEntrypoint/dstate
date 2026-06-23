@@ -1,7 +1,9 @@
 // Profiling harness on a large graph + hot loop. Builds a wide graph, then runs
-// a hot transition+suggest loop and measures the hot paths (append, transition,
-// suggest, recovery, snapshot). Catches O(n) regressions: transition+suggest must
-// stay roughly flat as the graph grows because they hit indices, not full scans.
+// a hot legalMoves+transition loop and measures the hot paths (append, transition,
+// recovery, snapshot). Catches O(n) regressions: a single FSM step touches only
+// the cursor's out-edges, so per-step cost must stay roughly flat as the graph
+// grows. (In-memory edge lookups scan the edge map; this bench guards that the
+// per-step cost stays under budget at scale.)
 
 import { DState } from "../src/index.js";
 
@@ -30,18 +32,17 @@ ds.setCursor(["n0"]);
 
 // Auto-snapshot serializes the whole projection (O(N)); it is measured on its
 // own below. Disable it during the hot loop so this measures pure
-// transition+suggest, which must stay flat as the graph grows.
+// legalMoves+transition, which must stay flat as the graph grows.
 ds.setTunable("snapshotInterval", 0);
 
 let cur = 0;
 const loopIters = 5000;
 const hot = ms(() => {
   for (let it = 0; it < loopIters; it++) {
-    const sug = ds.suggest();
-    if (sug.length === 0) break;
-    const next = sug[0];
+    const moves = ds.legalMoves();
+    if (moves.length === 0) break;
+    const next = moves[0];
     ds.transition(next.to);
-    if (it % 50 === 0) ds.reward(1, { edgeId: next.edgeId });
     cur = Number(next.to.slice(1));
   }
 });
@@ -71,10 +72,9 @@ process.stdout.write(JSON.stringify(report, null, 2) + "\n");
 // Loose regression guards: a single transition+suggest step must stay sub-ms on
 // average even at this scale (indices, not scans), and recovery is bounded by the
 // snapshot tail rather than the full log.
-// A full suggest+transition step touches only the cursor's out-edges and their
-// stats via indices. A regression to full-graph scanning at this scale (16k
-// edges) would push a single step into the hundreds of ms, so a 10ms budget
-// catches that class of regression with headroom while staying non-flaky.
+// A full legalMoves+transition step touches only the cursor's out-edges. A
+// regression that pushes a single step into the hundreds of ms is caught by a
+// 10ms budget with headroom while staying non-flaky.
 const perStep = hot / loopIters;
 if (perStep > 10) {
   process.stderr.write(`REGRESSION: per-step ${perStep.toFixed(2)}ms exceeds 10ms budget\n`);

@@ -18,24 +18,23 @@ function usage() {
       "  orient              one situational snapshot (cursor,suggestions,blocked,ready,violations,recent)",
       "",
       "inspect:",
-      "  status              cursor, ranked moves, ready frontier, violations",
-      "  metrics             counts, hot paths, enforcement + intuition aggregates",
+      "  status              cursor, legal moves, ready frontier, violations",
+      "  metrics             node/edge/zone/event counts + replay cost",
       "  describe            machine-readable manifest of the full agent surface",
       "  render              ASCII live view of cursor, moves, and recent log",
       "  tunables            current agent-settable knobs as json",
       "  verify              hash-chain integrity report (exit 1 if broken)",
       "  graph               mermaid export of the active graph",
       "  dot                 graphviz dot export",
-      "  suggest             ranked next moves as json (with score breakdown)",
       "  explain <to>        decision trace for transitioning to <to>",
       "  legal-moves         all non-denied moves from the cursor (--vars json)",
       "  validate            invariant + integrity report (exit 1 if invalid)",
       "  history [n]         last n log entries",
       "  get <id>            node by id as json",
-      "  recall              query nodes (--text --kind --tag --status --embedding --limit)",
+      "  recall              query nodes (--text --kind --tag --status --limit)",
       "",
       "mutate:",
-      "  remember <id>       create/update a node (--kind --label --payload json --tags a,b --embedding json)",
+      "  remember <id>       create/update a node (--kind --label --payload json --tags a,b)",
       "  link <from> <to>    transition/dependency edge (--kind --label --guard --enforcement --weight)",
       "  depend <node> <pre> dependency edge (node depends on pre)",
       "  unlink <edgeId>     remove an edge",
@@ -46,8 +45,6 @@ function usage() {
       "  deprecate <id>      deprecate a node",
       "  cursor [ids...]     print cursor, or set it to ids",
       "  transition <to>     move the cursor (--vars json)",
-      "  step [to]           one-call suggest->transition->reward loop (--reward v --vars json)",
-      "  reward <value>      reinforce the last/chosen edge (--edgeId)",
       "",
       "zones:",
       "  zone-define <n> <ids>  define a zone over id,id,... (--intra --boundary)",
@@ -64,7 +61,7 @@ function usage() {
       "  import <file>       load a portable json bundle into --db",
       "",
       "flags:",
-      "  --db <file>         store path (default ./adaptogen.db, :memory: for ephemeral)",
+      "  --db <file>         store path, a portable json bundle (default ./adaptogen.json, :memory: for ephemeral)",
       "  --json              emit structured json for status/history",
     ].join("\n") + "\n",
   );
@@ -118,7 +115,7 @@ function main() {
     usage();
     return 0;
   }
-  const dbFile = flags.db ?? "./adaptogen.db";
+  const dbFile = flags.db ?? "./adaptogen.json";
   const json = !!flags.json;
   const rest = positionals.slice(1);
 
@@ -159,7 +156,7 @@ function main() {
             JSON.stringify(
               {
                 cursor: ds.cursor(),
-                moves: ds.suggest(),
+                moves: ds.legalMoves(),
                 ready: ds.ready(),
                 violations: ds.validate().violations.length,
                 seq: ds.store.lastSeq(),
@@ -180,9 +177,6 @@ function main() {
         return 0;
       case "dot":
         process.stdout.write(ds.toDot() + "\n");
-        return 0;
-      case "suggest":
-        process.stdout.write(JSON.stringify(ds.suggest(), null, 2) + "\n");
         return 0;
       case "explain": {
         const to = rest[0];
@@ -235,17 +229,8 @@ function main() {
         }
         const payload = parseJsonFlag(flags.payload, "--payload");
         if (payload === null) return 2;
-        let embedding;
-        if (flags.embedding !== undefined) {
-          embedding = parseJsonFlag(flags.embedding, "--embedding");
-          if (embedding === null) return 2;
-          if (!Array.isArray(embedding) || !embedding.every((n) => typeof n === "number")) {
-            process.stderr.write("--embedding must be a json array of numbers\n");
-            return 2;
-          }
-        }
         return emitResult(
-          ds.remember({ id, kind: flags.kind, label: flags.label, payload, embedding, tags: flags.tags ? flags.tags.split(",") : undefined }),
+          ds.remember({ id, kind: flags.kind, label: flags.label, payload, tags: flags.tags ? flags.tags.split(",") : undefined }),
         );
       }
       case "get": {
@@ -261,11 +246,6 @@ function main() {
       case "recall": {
         const q = { text: flags.text, kind: flags.kind, tag: flags.tag, status: flags.status };
         if (flags.limit) q.limit = Number(flags.limit);
-        if (flags.embedding !== undefined) {
-          const emb = parseJsonFlag(flags.embedding, "--embedding");
-          if (emb === null) return 2;
-          q.embedding = emb;
-        }
         process.stdout.write(JSON.stringify(ds.recall(q), null, 2) + "\n");
         return 0;
       }
@@ -313,14 +293,6 @@ function main() {
         if (vars === null) return 2;
         return emitResult(ds.transition(to, vars ?? {}));
       }
-      case "reward": {
-        const value = Number(rest[0]);
-        if (!Number.isFinite(value)) {
-          process.stderr.write("reward needs a numeric value\n");
-          return 2;
-        }
-        return emitResult(ds.reward(value, { edgeId: flags.edgeId }));
-      }
       case "enforce": {
         const [edgeId, mode] = rest;
         if (!edgeId || !mode) {
@@ -328,14 +300,6 @@ function main() {
           return 2;
         }
         return emitResult(ds.setEnforcement(edgeId, mode));
-      }
-      case "step": {
-        const vars = parseJsonFlag(flags.vars, "--vars");
-        if (vars === null) return 2;
-        const opts = { vars: vars ?? {} };
-        if (rest[0]) opts.to = rest[0];
-        if (flags.reward !== undefined) opts.reward = Number(flags.reward);
-        return emitResult(ds.step(opts));
       }
       case "legal-moves": {
         const vars = parseJsonFlag(flags.vars, "--vars");

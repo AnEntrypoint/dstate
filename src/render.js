@@ -1,8 +1,7 @@
 // Observability surfaces. render() is the per-turn live view the agent reads:
-// cursor, ranked legal moves with enforcement/confidence, the ready frontier,
-// recent rewards, open violations. ASCII only -- arrows are ->, no decorative
-// glyphs -- so it drops cleanly into any text context. Mermaid/DOT exporters and
-// metrics() round out inspection.
+// cursor, legal moves with enforcement, the ready frontier, open violations.
+// ASCII only -- arrows are ->, no decorative glyphs -- so it drops cleanly into
+// any text context. Mermaid/DOT exporters and metrics() round out inspection.
 
 import { validate } from "./validate.js";
 
@@ -11,24 +10,17 @@ export function render(ds) {
   const cursor = ds.cursor();
   lines.push(`cursor: ${cursor.length ? cursor.join(", ") : "(none)"}`);
 
-  const moves = ds.suggest();
+  const moves = ds.legalMoves();
   lines.push(`moves (${moves.length}):`);
   if (moves.length === 0) lines.push("  (none)");
   for (const m of moves) {
-    lines.push(
-      `  -> ${m.to} [${m.enforcement}] score=${m.score.toFixed(2)} conf=${m.confidence.toFixed(2)} visits=${m.visits} ema=${m.emaReward.toFixed(2)}`,
-    );
+    lines.push(`  -> ${m.to} [${m.enforcement}] (${m.decision})`);
   }
 
-  const done = new Set(ds.store.allNodes().filter((n) => (ds.getStat("node", n.id)?.visits ?? 0) > 0).map((n) => n.id));
+  const done = new Set();
+  for (const e of ds.store.readEvents({ type: "TransitionTaken" })) done.add(e.payload.to);
   const ready = ds.ready(done);
   lines.push(`ready: ${ready.length ? ready.join(", ") : "(none)"}`);
-
-  const rewards = ds.store.readEvents({ type: "RewardApplied", limit: 3 });
-  if (rewards.length) {
-    lines.push("recent rewards:");
-    for (const r of rewards) lines.push(`  ${r.payload.value} @ seq ${r.seq}`);
-  }
 
   const v = validate(ds).violations.length;
   lines.push(`violations: ${v}`);
@@ -39,13 +31,6 @@ export function render(ds) {
 export function metrics(ds) {
   const nodes = ds.store.allNodes();
   const edges = ds.store.allEdges();
-  const stats = ds.store.allStats();
-  const edgeStats = stats.filter((s) => s.scopeKind === "edge");
-  const hot = [...edgeStats].sort((a, b) => b.visits - a.visits).slice(0, 5).map((s) => ({ edge: s.scopeId, visits: s.visits }));
-  const blocks = edgeStats.reduce((a, s) => a + s.blocks, 0);
-  const soft = edgeStats.reduce((a, s) => a + s.softViolations, 0);
-  const rewarded = stats.filter((s) => s.successes + s.failures > 0);
-  const meanReward = rewarded.length ? rewarded.reduce((a, s) => a + s.emaReward, 0) / rewarded.length : 0;
   const lastSnap = ds.store.latestSnapshotId();
   const snapSeq = lastSnap ? ds.store.snapshotSeq(lastSnap) ?? 0 : 0;
   return {
@@ -61,13 +46,7 @@ export function metrics(ds) {
     },
     zones: ds.store.allZones().length,
     events: ds.store.lastSeq(),
-    hotTransitions: hot,
-    blocks,
-    softViolations: soft,
-    meanReward,
     estimatedReplayCost: ds.store.lastSeq() - snapSeq,
-    // false means text recall ran on the LIKE fallback, not FTS5.
-    ftsEnabled: ds.store.ftsEnabled,
   };
 }
 

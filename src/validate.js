@@ -1,8 +1,7 @@
 // Invariant checking, repair, and storage integrity. validate() reports logical
 // violations (cycles, dangling refs, cursor on a dead node, hash-chain breaks);
-// repair() fixes the safe ones by emitting corrective events (or a rebuild for
-// orphaned projection rows) and quarantines the rest. Nothing is silently
-// mutated outside the event log.
+// repair() fixes the safe ones by emitting corrective events and quarantines the
+// rest. Nothing is silently mutated outside the event log.
 
 import { topoSort } from "./graph.js";
 
@@ -14,7 +13,6 @@ export function validate(ds) {
   const store = ds.store;
   const violations = [];
   const nodeIds = new Set(store.allNodes().map((n) => n.id));
-  const edgeIds = new Set(store.allEdges().map((e) => e.id));
 
   if (topoSort(store).cyclic) {
     violations.push({ kind: "DagCycle", locus: "dependency-graph", detail: "dependency edges form a cycle", fixable: false });
@@ -49,11 +47,6 @@ export function validate(ds) {
     }
   }
 
-  for (const s of store.allStats()) {
-    const live = s.scopeKind === "node" ? nodeIds.has(s.scopeId) : edgeIds.has(s.scopeId);
-    if (!live) violations.push({ kind: "OrphanStat", locus: `${s.scopeKind}:${s.scopeId}`, detail: `stat for missing ${s.scopeKind}`, fixable: true });
-  }
-
   for (const m of store.allZoneMembers()) {
     if (!nodeIds.has(m.node)) {
       violations.push({ kind: "DanglingZoneMember", locus: `${m.zone}:${m.node}`, detail: `zone member node missing`, fixable: true });
@@ -73,7 +66,6 @@ export function repair(ds) {
   const report = validate(ds);
   const fixed = [];
   const quarantined = [];
-  let needRebuild = false;
 
   for (const v of report.violations) {
     if (!v.fixable) {
@@ -102,14 +94,9 @@ export function repair(ds) {
         fixed.push(v);
         break;
       }
-      case "OrphanStat":
-        needRebuild = true;
-        fixed.push(v);
-        break;
       default:
         quarantined.push(v);
     }
   }
-  if (needRebuild) store.rebuild(); // regenerates stats purely from events, dropping orphans
   return { fixed, quarantined };
 }

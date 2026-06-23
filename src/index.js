@@ -1,9 +1,9 @@
 // Public surface. The DState facade plus the evolve/validate/checkpoint/render/
 // history operations, exposed both as standalone functions and (for ergonomics)
 // as methods on DState so the agent calls everything through one object. This is
-// the API the agent uses to remember, decide, and optimize itself.
+// the API the agent uses to remember, decide, and evolve its own state machine.
 
-import { DState } from "./engine.js";
+import { DState, DEFAULT_SPEC } from "./engine.js";
 import * as evolveM from "./evolve.js";
 import * as validateM from "./validate.js";
 import * as checkpointM from "./checkpoint.js";
@@ -24,15 +24,6 @@ const ext = {
   },
   migrate(kind, apply, toVersion) {
     return evolveM.migrate(this, kind, apply, toVersion);
-  },
-  optimize() {
-    return evolveM.optimize(this);
-  },
-  reweight() {
-    return evolveM.reweight(this);
-  },
-  selfIterate() {
-    return evolveM.selfIterate(this);
   },
   validate() {
     return validateM.validate(this);
@@ -93,7 +84,7 @@ const ext = {
 
 Object.assign(DState.prototype, ext);
 
-export { DState };
+export { DState, DEFAULT_SPEC };
 // Ergonomic alias matching the package name; `import { Adaptogen } from "adaptogen"`.
 export { DState as Adaptogen };
 export { DStateError, ok, err, isOk, isErr, unwrap, ERROR_CODES } from "./errors.js";

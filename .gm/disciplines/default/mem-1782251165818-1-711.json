@@ -1,0 +1,3 @@
+## Resolved mutable: m-manifest-verb-list
+
+manifest.js:62-145 read. STRIP verbs.fsm suggest/step/reward/getStat (lines 87-90), verbs.evolve optimize/reweight/selfIterate (112-114), verbs.observe ftsEnabled (142), guardDSL.context stat.* (49), tunables explore/epsilon/rewardAlpha/ucbC/escalationThreshold/demotionCleanRuns/decayHalfLife (163-182), enforcement.meaning auto-promote/demote (17-18), patterns minimal_session/step_loop/reward_decay/self_evolution (203-238). KEEP all FSM/dag/zones/edges/memory/integrity/durability/config/observe(render,metrics,toMermaid,toDot,history,describe). test.js:191 asserts every listed verb resolves to a real DState method - so manifest must list only surviving methods.

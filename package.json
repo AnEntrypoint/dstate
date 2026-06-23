@@ -1,7 +1,7 @@
 {
   "name": "adaptogen",
-  "version": "0.1.5",
-  "description": "Agent-owned, self-evolving DAG+FSM state: durable memory, policy and intuition in one event-sourced store, with soft/hard transition enforcement.",
+  "version": "0.2.0",
+  "description": "Agent-owned DAG+FSM state store: durable memory and transition policy in one event-sourced, in-memory graph with soft/hard enforcement. Vendor your own state machine as a JSON spec; persists to a portable JSON bundle, no database.",
   "type": "module",
   "module": "src/index.js",
   "main": "src/index.js",
@@ -13,6 +13,7 @@
   },
   "files": [
     "src",
+    "examples",
     "skills",
     "README.md",
     "CHANGELOG.md",
@@ -43,14 +44,11 @@
     "event-sourcing",
     "memory",
     "policy",
-    "bandit",
-    "sqlite"
+    "in-memory",
+    "portable"
   ],
   "license": "MIT",
   "publishConfig": {
     "access": "public"
-  },
-  "dependencies": {
-    "libsql": "^0.5.29"
   }
 }

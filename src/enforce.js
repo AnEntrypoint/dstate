@@ -4,6 +4,7 @@
 // final decision is the strictest of the applicable ones. Edge enforcement "off"
 // is the gate that lets an otherwise-blocked crossing through. The whole result
 // is a structured trace so explain() can name the exact deciding rule.
+// Enforcement is static: off/soft/hard as authored, never auto-promoted/demoted.
 
 const DEC_RANK = { allow: 0, warn: 1, deny: 2 };
 
@@ -50,11 +51,6 @@ export function decide(input) {
   let winner = { decision: "allow", mode: "off", source: "none", reason: null };
   for (const c of candidates) if (DEC_RANK[c.decision] > DEC_RANK[winner.decision]) winner = c;
 
-  const promoted =
-    winner.decision === "warn" &&
-    input.escalationThreshold > 0 &&
-    input.softViolations + 1 >= input.escalationThreshold;
-
   return {
     decision: winner.decision,
     enforcementSource: winner.source,
@@ -70,7 +66,6 @@ export function decide(input) {
       ...(input.zoneFrom ? { zoneFrom: input.zoneFrom } : {}),
       ...(input.zoneTo ? { zoneTo: input.zoneTo } : {}),
     },
-    escalation: { softViolations: input.softViolations, promoted },
     reasons,
   };
 }

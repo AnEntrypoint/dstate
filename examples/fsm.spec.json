@@ -1,0 +1,24 @@
+{
+  "_comment": "A vendorable state-machine spec. Load it with `adaptogen plan --spec \"$(cat examples/fsm.spec.json)\"` or DState.prototype.plan(spec) in code. Every endpoint id must be declared in nodes or already exist. guard strings use the guard DSL (see `adaptogen describe` -> guardDSL). enforcement is off|soft|hard. This whole file is the config: copy it, change the nodes/transitions/zones, and ship your own machine.",
+  "nodes": [
+    { "id": "research", "label": "gather context", "payload": {} },
+    { "id": "draft", "label": "produce a draft", "payload": { "words": 0 } },
+    { "id": "review", "label": "check the draft", "payload": {} },
+    { "id": "ship", "label": "release", "payload": {} }
+  ],
+  "transitions": [
+    ["research", "draft"],
+    ["draft", "review"],
+    ["review", "draft", { "label": "needs work" }],
+    ["review", "ship", { "guard": "vars.approved == true", "enforcement": "hard" }]
+  ],
+  "deps": [
+    ["draft", "research"],
+    ["review", "draft"],
+    ["ship", "review"]
+  ],
+  "zones": [
+    { "name": "safe", "members": ["research", "draft", "review"], "intra": "off", "boundary": "hard" }
+  ],
+  "cursor": ["research"]
+}

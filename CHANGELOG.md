@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.2.0
+
+- refactor!: remove all persistence-layer and learning machinery and refocus the
+  store on the DAG+FSM. Why: a smaller, portable, dependency-free state machine an
+  agent can vendor its own configuration into.
+  - **persistence**: drop `libsql`/SQLite entirely (`db.js`, `schema.js`, the
+    `events`/projection tables, FTS5, WAL). The event log is now a plain in-memory
+    array folded into Map-based projections; state persists to a portable JSON
+    bundle on disk (atomic temp+rename on `save()`/`close()`, loaded+replayed on
+    `open`). On-disk durability is snapshot-on-save, not per-append. The runtime
+    now has ZERO dependencies and runs on plain Node (npx works with no install).
+  - **intuition removed**: delete `intuition.js` (UCB ranking) and `suggest()`,
+    `reward()`, `step()`, `recentTransitions()`, `getStat()`, `RewardApplied`, the
+    `stats` table, edge `embedding`, and `recall({embedding})`/FTS text. `recall`
+    is now an exact-field + case-insensitive substring filter. The FSM answers
+    `legalMoves()` only.
+  - **static enforcement**: remove soft->hard escalation and hard->soft
+    auto-demotion (and `cleanStreak`, `escalationThreshold`, `demotionCleanRuns`,
+    and the `explore`/`epsilon`/`rewardAlpha`/`ucbC`/`decayHalfLife` tunables). An
+    edge is `off`/`soft`/`hard` as authored, never auto-changed.
+  - **evolve trimmed**: remove `optimize()`/`reweight()`/`selfIterate()` (all
+    stats-driven); keep `splitState`/`mergeStates`/`gc`/`migrate` as pure
+    structural transforms (`gc` now uses cursor-reachability, not visit stats).
+  - **vendoring surface**: `plan()` gains a `zones` field and `examples/fsm.spec.json`
+    ships a documented template, so an agent without this codebase configures its
+    own machine as plain JSON. The default seed graph is now `DEFAULT_SPEC`.
+  - docs: README, AGENTS.md, and the `describe()` manifest rewritten for the
+    in-memory, FSM-focused, vendorable model. `test.js` witness (72 assertions) and
+    `bench.js` rewritten to exercise the FSM (no suggest/reward). `package.json`
+    drops the `libsql` dependency and the `bandit`/`sqlite` keywords.
+
 ## Unreleased
 
 - ci(workflow): add `.github/workflows/ci.yml` running the integration witness

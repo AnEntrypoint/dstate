@@ -2,10 +2,12 @@
 // the full history serializes to plain JSON (event drafts in order) and replays
 // into a fresh store, reconstructing an identical projection and a fresh, valid
 // hash chain. Storage-pointer events (snapshots/checkpoints) are omitted; they
-// are local optimizations, not part of the portable truth.
+// are local optimizations, not part of the portable truth. This same bundle is
+// what DState writes to and reads from a JSON file on disk.
 
 import { DState } from "./engine.js";
-import { SCHEMA_VERSION } from "./schema.js";
+
+export const SCHEMA_VERSION = 2;
 
 const SKIP = ["SnapshotTaken", "CheckpointCreated"];
 
@@ -20,7 +22,7 @@ export function exportState(ds) {
 }
 
 export function importState(filename, bundle, opts = {}) {
-  const ds = DState.open(filename, { ...opts, seed: false });
+  const ds = DState.open(filename, { ...opts, seed: false, load: false });
   ds.store.appendMany(bundle.events.map((e) => ({ type: e.type, payload: e.payload })));
   return ds;
 }
